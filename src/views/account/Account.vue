@@ -4,7 +4,14 @@
       :buttons=" dialogConfig.buttons"
       width="1000px"
       :showCancel="false"
-      @close=" closeDialog">
+      @close=" closeDialog"
+      >
+    <!-- 自定义 Header -->
+    <template #header="{ close, titleId, titleClass }">
+      <div :id="titleId" :class="['my-custom-header', titleClass]">
+        <h2>👋 欢迎回到 KongTube</h2>
+      </div>
+    </template>
     <div class="dialog-panel">
       <div class="bg">
         <img src="../../assets/login_bg.png"></img>
@@ -28,7 +35,6 @@
               clearable
               placeholder="请输入邮箱"
               v-model.trim="formData.email"
-
               size="large"
           >
             <template #prefix>
@@ -36,7 +42,7 @@
             </template>
           </el-input>
         </el-form-item>
-        <el-form-item prop="password" v-if="opType == 1"><!--            登录-->
+        <el-form-item prop="password" v-if="opType == 1"><!--        登录-->
           <el-input
               show-password
               placeholder="请输入密码"
@@ -132,6 +138,7 @@ import ModalDialog from "@/components/ModalDialog.vue";
 import {Value} from "sass";
 import {useLoginStore} from "@/stores/loginStore.js";
 import md5 from "js-md5";
+
 const {proxy} = getCurrentInstance();
 
 
@@ -143,6 +150,7 @@ const checkCodeInfo = ref({});
 const closeDialog = () => {
   loginStore.setLogin(false);
 }
+//重新获取验证图片
 const changeCheckCode = async () => {
   let result = await proxy.Request({
     url: proxy.Api.checkCode,
@@ -152,8 +160,8 @@ const changeCheckCode = async () => {
   }
   checkCodeInfo.value = result.data;
 }
+//自定义登录注册表单按钮
 const dialogConfig = ref({
-  show: true,
   buttons: [],
 })
 const formData = ref({});
@@ -206,6 +214,7 @@ const rules = {
     message: "请输入图片验证码",
   },]
 };
+//提交
 const dnSubmit = () => {
   formDataRef.value.validate(async (valid) => {
     if (!valid) {
@@ -213,27 +222,29 @@ const dnSubmit = () => {
     }
     let params = {};
     Object.assign(params, formData.value);
+
     params.checkCodeKey = checkCodeInfo.value.checkCodeKey;
-/*    if(opType.value == 1){
-      params.password = md5(params.password);
-    }*/
+    /*    if(opType.value == 1){
+          params.password = md5(params.password);
+        }*/
     let result = await proxy.Request({
-      url: opType.value == 0 ?proxy.Api.register : proxy.Api.login,
+      url: opType.value == 0 ? proxy.Api.register : proxy.Api.login,
       params,
-      errorCallback:() =>{
+      errorCallback: () => {
         changeCheckCode();
       },
     });
     if (!result) {
       return;
     }
-    if(opType.value == 0){
+    if (opType.value == 0) {
       proxy.Message.success("注册成功");
       showPanel(1);
-    }else if(opType.value == 1) {
+    } else if (opType.value == 1) {
       proxy.Message.success("登录成功");
       loginStore.setLogin(false);
-      loginStore.setUserInfo(result.data);
+
+      loginStore.userInfo = result.data;
     }
   });
 };
@@ -252,13 +263,13 @@ const resetForm = () => {
 const opType = ref(1);
 const showPanel = (value: number) => {
   opType.value = value
-  if(loginStore.showLogin){
+  if (loginStore.showLogin) {
     resetForm();
   }
 }
-onMounted(() => {
+/*onMounted(() => {
   showPanel(1);
-})
+})*/
 
 </script>
 
@@ -328,5 +339,27 @@ onMounted(() => {
   .img {
     cursor: pointer;
   }
+}
+.my-custom-header {
+  display: flex;
+  align-items: center;
+  padding: 12px 20px;
+  background: #f0f4f8;
+  /* 依然用 space-between 保持左右两端对齐 */
+  justify-content: space-between;
+}
+
+.my-custom-header h2 {
+  /* 占据中间所有可用空间 */
+  flex: 1;
+  /* 水平居中标题文字 */
+  text-align: center;
+  /* 如果想让标题本身不要太宽，可以加上 max-width */
+  /* max-width: 200px; */
+}
+
+/* 确保关闭按钮不被拉伸 */
+.my-custom-header .my-close-btn {
+  flex: 0 0 auto;
 }
 </style>

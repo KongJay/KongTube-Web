@@ -15,16 +15,13 @@
 </template>
 <script setup lang="ts">
 import {ref, reactive, getCurrentInstance, nextTick, onMounted} from "vue";
-import LayoutHeader from "@/views/LayoutHeader.vue";
-
-const {proxy} = getCurrentInstance();
-
 import {useRoute, useRouter} from "vue-router";
-import Account from "@/views/account/Account.vue";
-
-
+const {proxy} = getCurrentInstance();
 const route = useRoute();
 const router = useRouter();
+
+import LayoutHeader from "@/views/LayoutHeader.vue";
+import Account from "@/views/account/Account.vue";
 onMounted(() => {
   window.addEventListener("scroll", windowScrollHandler);
 })

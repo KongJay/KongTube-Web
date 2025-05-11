@@ -16,8 +16,57 @@
       </div>
     </div>
     <div class="user-panel">
-      <div class="user-avatar" @click="login()">
-        <img src="../assets/user.png" alt="用户头像"/>
+      <div class="user-avatar" >
+        <template v-if="Object.keys(loginStore.userInfo).length>0">
+          <Avatar
+            class="avatar"
+            :avatar="loginStore.userInfo.avatar"
+            :userId="loginStore.userInfo.userId"
+            :width="35"
+            :lazy="false"
+            @mouseover="getUserCountInfo"
+          ></Avatar>
+          <div class="user-info-panel">
+            <div class="nick-name">
+              {{loginStore.userInfo.nickName}}
+            </div>
+            <div class="count-info">
+              <div class="count-info-item">
+                <div class="count-vale">{{userCountInfo.focusCount}}</div>
+                <div class="count-title">关注</div>
+              </div>
+              <div class="count-info-item">
+                <div class="count-vale">{{userCountInfo.fansCount}}</div>
+                <div class="count-title">粉丝</div>
+              </div>
+              <div class="count-info-item">
+                <div class="count-vale">{{userCountInfo.currentCoinCount}}</div>
+                <div class="count-title">硬币</div>
+              </div>
+            </div>
+            <router-link
+                :to="`/user/${loginStore.userInfo.userId}`"
+                class="item iconfont icon-user"
+            >
+              <span class="item-name">个人中心</span>
+              <span class="iconfont icon-left"></span>
+            </router-link>
+            <router-link
+                :to="`/ucenter/video`"
+                class="item iconfont icon-play"
+            >
+              <span class="item-name">投稿管理</span>
+              <span class="iconfont icon-left"></span>
+            </router-link>
+            <div class="logout item iconfont icon-logout" @click="logout">退出登录</div>
+          </div>
+        </template>
+        <Avatar
+            v-else
+            :width="35"
+            :lazy="false"
+            @click="login"
+        ></Avatar>
       </div>
       <div class="user-panel-item">
         <div class="iconfont icon-message"></div>
@@ -46,11 +95,19 @@
 </template>
 
 <script setup lang="ts">
+import {ref, getCurrentInstance, onMounted} from "vue";
+import {useRoute, useRouter} from "vue-router";
+const {proxy} = getCurrentInstance();
+const route = useRoute();
+const router = useRouter();
 import {useLoginStore} from "@/stores/loginStore";
-const loginStore = useLoginStore();
+import Avatar from "@/components/Avatar.vue";
+
 defineOptions({
   name: "LayoutHeader"
 })
+
+const loginStore = useLoginStore();
 
 const props = defineProps({
   theme: {
@@ -65,6 +122,33 @@ const handleUpload = () => {
 const login = () => {
   loginStore.setLogin(true);
 };
+const userCountInfo = ref({});
+const getUserCountInfo = async () => {
+  let result = await proxy.Request({
+    url:proxy.Api.getUserCountInfo,
+  });
+  if(!result){
+    return;
+  }
+  userCountInfo.value = result.data;
+}
+const logout = async () => {
+  proxy.Confirm({
+    message:"确定要退出登录吗？",
+    okfun: async () => {
+      let result = await proxy.Request({
+        url: proxy.Api.logout,
+      })
+      if(!result){
+        return;
+      }
+      loginStore.saveUserInfo({})
+    }
+  })
+}
+
+
+
 </script>
 
 <style scoped lang="scss">
@@ -74,13 +158,16 @@ const login = () => {
   padding: 0px 25px;
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
-  .search-body{
+
+  .search-body {
     color: #61666d;
-    .search-panel{
+
+    .search-panel {
       margin: 0px auto;
       position: relative;
       max-midth: 80px;
-      .search-panel-inner{
+
+      .search-panel-inner {
         width: 100%;
         position: absolute;
         top: 10px;
@@ -89,23 +176,27 @@ const login = () => {
         border-radius: 8px;
         overflow: hidden;
         z-index: 1001;
-        .input-panel{
+
+        .input-panel {
           display: flex;
           align-items: center;
           background: #f1f2f3;
-          input{
+
+          input {
             width: 100%;
             border: none;
             background: #f1f2f3;
             border-radius: 5px;
             padding: 8px 10px;
             margin: 3px 10px 3px 10px;
+
             &:focus {
               outline: none;
 
             }
           }
-          .iconfont{
+
+          .iconfont {
             font-size: 20px;
             margin-right: 10px;
             color: #2f3238;
@@ -116,6 +207,7 @@ const login = () => {
             justify-content: center;
             border-radius: 5px;
             cursor: pointer;
+
             &:hover {
               background: #ddd;
             }
@@ -124,17 +216,22 @@ const login = () => {
       }
     }
   }
+
   .menu {
     display: flex;
     align-items: center;
+
     a {
       text-decoration: none;
+
       &.router-link-active {
         font-weight: bold;
       }
     }
+
     .icon-logo {
       font-size: 16px;
+
       &::before {
         float: left;
         margin-top: -3px;
@@ -148,20 +245,105 @@ const login = () => {
     display: flex;
     justify-content: flex-end;
     align-items: center;
-
     .user-avatar {
+      position: relative;
+      overflow: hidden;
+      margin-right: 13px;
       height: 35px;
       width: 35px;
-      img {
-        width: 100%;
-        border-radius: 50%;
+
+      .avatar {
+        transition: transform 0.3s;
+        position: absolute;
+        z-index: 10001;
+        left: 0px;
+        top: 0px;
+      }
+      .user-info-panel {
+        padding: 10px 20px 10px;
+        background: #fff;
+        width: 300px;
+        position: absolute;
+        top: 60px;
+        left: -150px;
+        border-radius: 5px;
+        box-shadow: 0px 0px 12px rgba(0, 0, 0, 0.12);
+        z-index: 10000;
+        opacity: 0;
+        transition: opacity 0.3s;
+      .nick-name {
+        font-size: 16px;
+        text-align: center;
+        line-height: 40px;
+        color: var(--text3);
+      }
+      .count-info {
+        margin: 10px 0px;
+        display: flex;
+        justify-content: space-around;
+        .count-info-item {
+          text-align: center;
+          .count-title {
+            color: var(--text3);
+            margin-top: 5px;
+          }
+          .count-value {
+            text-align: center;
+            color: var(--text)
+          }
+        }
+      }
+      .item {
+        font-size: 14px;
+        display: block;
+        text-align: left;
+        line-height: 40px;
+        color: var(--text3);
+        padding: 0px 20px;
+        text-decoration: none;
+        display: flex;
+        justify-content: space-between;
+
+        .item-name {
+          flex: 1;
+        }
+
+        &::before {
+          margin-right: 15px;
+        }
+
+        &:hover {
+          background: #e8e8e8;
+          border-radius: 5px;
+        }
+      }
+
+      .logout {
+        display: block;
+        margin-top: 10px;
+        border-top: 1px solid #ddd;
+        cursor: pointer;
       }
     }
+
+    &:hover {
+      overflow: visible;
+
+      .avatar {
+        transform: scale(2) translateY(10px) translateX(-10px);
+      }
+
+      .user-info-panel {
+        opacity: 1;
+      }
+    }
+  }
 
     .user-panel-item {
       text-align: center;
       cursor: pointer;
       padding: 0px 30px;
+
       .iconfont {
         text-align: center;
         font-size: 20px;
@@ -171,11 +353,13 @@ const login = () => {
 
     .btn-upload {
       margin-left: 10px;
+
       .el-button {
         background: #fb7299;
         border-color: #fb7299;
         border-radius: 8px;
         padding: 0px 20px;
+
         .iconfont {
           &::before {
             margin-right: 5px;
@@ -191,6 +375,7 @@ const login = () => {
     .menu-item {
       color: #fff;
     }
+
     a {
       color: #fff;
     }
@@ -199,9 +384,11 @@ const login = () => {
   &-dark {
     background: white;
     color: #61666d;
+
     .menu-item {
       color: #61666d;
     }
+
     a {
       color: #61666d;
     }

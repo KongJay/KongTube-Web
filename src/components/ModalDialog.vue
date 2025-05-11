@@ -65,7 +65,7 @@ const props = defineProps({
   },
 });
 const maxHeight = window.innerHeight - props.top - 120;
-const emit = defineEmits();
+const emit = defineEmits(['close']);
 const close = () => {
   emit("close");
 }
