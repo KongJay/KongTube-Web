@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-const useNavAction = defineStore('navAction', {
+const useNavActionStore = defineStore('navAction', {
     state:() =>{
         return{
             fixedHeader: true,
@@ -28,5 +28,5 @@ const useNavAction = defineStore('navAction', {
     }
 })
 export {
-    useNavAction
+    useNavActionStore
 };

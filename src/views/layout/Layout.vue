@@ -3,7 +3,15 @@
   <div class="main-container"
        :style="{width:proxy.bodyMaxWidth+'px',
         minWidth:proxy.bodyMinWidth+'px'}">
-    <div class="header">
+    <div class="header"
+         :style="{
+         'background-image':
+         `url(${backgroundImage
+          ? backgroundImage
+          :proxy.Utils.getLocalImage('banner_bg.png')
+         })`,
+         }"
+    >
       <LayoutHeader></LayoutHeader>
     </div>
     <div class="header-fixed" v-if="showFixedHeader">
@@ -20,7 +28,7 @@
            @mouseover="lineCategoryMouseHandler(1)"
            @mouseout="lineCategoryMouseHandler(0)"
       >
-        <Category :showType="1"  :mouseOver="mouseOver"></Category>
+        <Category :showType="1" :mouseOver="mouseOver"></Category>
       </div>
     </div>
 
@@ -42,14 +50,16 @@
 </template>
 <script setup lang="ts">
 import {mitter} from "@/eventbus/eventBus.js";
-import {ref, reactive, getCurrentInstance, nextTick, onMounted, onUnmounted} from "vue";
+import {ref, reactive, getCurrentInstance, nextTick, onMounted, onUnmounted, computed} from "vue";
 import {useRoute, useRouter} from "vue-router";
-import {navActionStore} from "@/store/navActionStore.js";
-
+import {useNavActionStore} from "@/store/navActionStore.js";
+import {useCategotyStore} from "@/store/categoryStore.js";
+const categoryStore = useCategotyStore();
 const {proxy} = getCurrentInstance();
 const route = useRoute();
 const router = useRouter();
-const navActionStore = navActionStore();
+const navActionStore = useNavActionStore();
+
 import LayoutHeader from "@/views/layout/LayoutHeader.vue";
 import Account from "@/views/account/Account.vue";
 import Category from "@/views/layout/Category.vue";
@@ -85,9 +95,13 @@ const windowResizeHandler = () => {
   mitter.emit("windowResize")
 }
 const mouseOver = ref(false);
-const lineCategoryMouseHandler =(type:number) =>{
-    mouseOver.value = type == 1;
+const lineCategoryMouseHandler = (type: number) => {
+  mouseOver.value = type == 1;
 }
+const backgroundImage = computed(() => {
+  const background = categoryStore.currentPCategory ? categoryStore.currentPCategory.background : null;
+  return background ? proxy.Api.sourcePath + background : null;
+})
 </script>
 <style>
 body {
@@ -109,7 +123,7 @@ body {
     background-repeat: no-repeat;
     width: 100%;
     position: relative;
-    background-image: url("../../assets/banner_bg.png");
+
   }
 
   .header-fixed {
@@ -142,6 +156,7 @@ body {
     .category {
       margin-top: 20px;
     }
+
     height: 1500px;
   }
 }

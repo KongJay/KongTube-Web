@@ -1,10 +1,33 @@
 <template>
   <div :class="['header-bar','header-bar-'+theme]">
     <div class="menu">
-      <router-link to="/" class="iconfont icon-logo">
-        首页
-      </router-link>
+      <el-popover
+          :width="categoryPartCount * (150 + 21) +24"
+          trigger="hover"
+          :show-arrow="false"
+          :offset="22"
+          placement="bottom-start"
+      >
+        <template #reference>
+          <router-link to="/" class="iconfont icon-logo">
+            首页
+          </router-link>
+        </template>
+        <div class="nav-list">
+          <div class="nav-part" v-for="index in categoryPartCount">
+                <router-link class="nav-item" v-for="item in categoryStore.categoryList.slice(
+                    (index-1) * partCount ,index * partCount
+                )" :to="`/v/${item.categoryCode}`">
+                  <span class="icon" v-if="item.icon">
+                    <img :src="`${proxy.Api.sourcePath}${item.icon}`" />
+                  </span>
+                  <span class="category-name">{{item.categoryName}}</span>
+                </router-link>
+          </div>
+        </div>
+      </el-popover>
     </div>
+
     <div class="search-body">
       <div class="search-panel">
         <div class="search-panel-inner">
@@ -16,31 +39,31 @@
       </div>
     </div>
     <div class="user-panel">
-      <div class="user-avatar" >
+      <div class="user-avatar">
         <template v-if="Object.keys(loginStore.userInfo).length>0">
           <Avatar
-            class="avatar"
-            :avatar="loginStore.userInfo.avatar"
-            :userId="loginStore.userInfo.userId"
-            :width="35"
-            :lazy="false"
-            @mouseover="getUserCountInfo"
+              class="avatar"
+              :avatar="loginStore.userInfo.avatar"
+              :userId="loginStore.userInfo.userId"
+              :width="35"
+              :lazy="false"
+              @mouseover="getUserCountInfo"
           ></Avatar>
           <div class="user-info-panel">
             <div class="nick-name">
-              {{loginStore.userInfo.nickName}}
+              {{ loginStore.userInfo.nickName }}
             </div>
             <div class="count-info">
               <div class="count-info-item">
-                <div class="count-vale">{{userCountInfo.focusCount}}</div>
+                <div class="count-vale">{{ userCountInfo.focusCount }}</div>
                 <div class="count-title">关注</div>
               </div>
               <div class="count-info-item">
-                <div class="count-vale">{{userCountInfo.fansCount}}</div>
+                <div class="count-vale">{{ userCountInfo.fansCount }}</div>
                 <div class="count-title">粉丝</div>
               </div>
               <div class="count-info-item">
-                <div class="count-vale">{{userCountInfo.currentCoinCount}}</div>
+                <div class="count-vale">{{ userCountInfo.currentCoinCount }}</div>
                 <div class="count-title">硬币</div>
               </div>
             </div>
@@ -95,8 +118,10 @@
 </template>
 
 <script setup lang="ts">
-import {ref, getCurrentInstance, onMounted} from "vue";
+import {ref, getCurrentInstance, onMounted, computed} from "vue";
 import {useRoute, useRouter} from "vue-router";
+import {useCategotyStore} from "@/store/categoryStore.js";
+const categoryStore = useCategotyStore();
 const {proxy} = getCurrentInstance();
 const route = useRoute();
 const router = useRouter();
@@ -125,29 +150,31 @@ const login = () => {
 const userCountInfo = ref({});
 const getUserCountInfo = async () => {
   let result = await proxy.Request({
-    url:proxy.Api.getUserCountInfo,
+    url: proxy.Api.getUserCountInfo,
   });
-  if(!result){
+  if (!result) {
     return;
   }
   userCountInfo.value = result.data;
 }
 const logout = async () => {
   proxy.Confirm({
-    message:"确定要退出登录吗？",
+    message: "确定要退出登录吗？",
     okfun: async () => {
       let result = await proxy.Request({
         url: proxy.Api.logout,
       })
-      if(!result){
+      if (!result) {
         return;
       }
       loginStore.saveUserInfo({})
     }
   })
 }
-
-
+const partCount = 5;
+const categoryPartCount = computed(() => {
+  return Math.ceil(categoryStore.categoryList.length / partCount);
+})
 
 </script>
 
@@ -245,6 +272,7 @@ const logout = async () => {
     display: flex;
     justify-content: flex-end;
     align-items: center;
+
     .user-avatar {
       position: relative;
       overflow: hidden;
@@ -259,6 +287,7 @@ const logout = async () => {
         left: 0px;
         top: 0px;
       }
+
       .user-info-panel {
         padding: 10px 20px 10px;
         background: #fff;
@@ -271,73 +300,79 @@ const logout = async () => {
         z-index: 10000;
         opacity: 0;
         transition: opacity 0.3s;
-      .nick-name {
-        font-size: 16px;
-        text-align: center;
-        line-height: 40px;
-        color: var(--text3);
-      }
-      .count-info {
-        margin: 10px 0px;
-        display: flex;
-        justify-content: space-around;
-        .count-info-item {
+
+        .nick-name {
+          font-size: 16px;
           text-align: center;
-          .count-title {
-            color: var(--text3);
-            margin-top: 5px;
-          }
-          .count-value {
+          line-height: 40px;
+          color: var(--text3);
+        }
+
+        .count-info {
+          margin: 10px 0px;
+          display: flex;
+          justify-content: space-around;
+
+          .count-info-item {
             text-align: center;
-            color: var(--text)
+
+            .count-title {
+              color: var(--text3);
+              margin-top: 5px;
+            }
+
+            .count-value {
+              text-align: center;
+              color: var(--text)
+            }
           }
         }
+
+        .item {
+          font-size: 14px;
+          display: block;
+          text-align: left;
+          line-height: 40px;
+          color: var(--text3);
+          padding: 0px 20px;
+          text-decoration: none;
+          display: flex;
+          justify-content: space-between;
+
+          .item-name {
+            flex: 1;
+          }
+
+          &::before {
+            margin-right: 15px;
+          }
+
+          &:hover {
+            background: #e8e8e8;
+            border-radius: 5px;
+          }
+        }
+
+        .logout {
+          display: block;
+          margin-top: 10px;
+          border-top: 1px solid #ddd;
+          cursor: pointer;
+        }
       }
-      .item {
-        font-size: 14px;
-        display: block;
-        text-align: left;
-        line-height: 40px;
-        color: var(--text3);
-        padding: 0px 20px;
-        text-decoration: none;
-        display: flex;
-        justify-content: space-between;
 
-        .item-name {
-          flex: 1;
+      &:hover {
+        overflow: visible;
+
+        .avatar {
+          transform: scale(2) translateY(10px) translateX(-10px);
         }
 
-        &::before {
-          margin-right: 15px;
+        .user-info-panel {
+          opacity: 1;
         }
-
-        &:hover {
-          background: #e8e8e8;
-          border-radius: 5px;
-        }
-      }
-
-      .logout {
-        display: block;
-        margin-top: 10px;
-        border-top: 1px solid #ddd;
-        cursor: pointer;
       }
     }
-
-    &:hover {
-      overflow: visible;
-
-      .avatar {
-        transform: scale(2) translateY(10px) translateX(-10px);
-      }
-
-      .user-info-panel {
-        opacity: 1;
-      }
-    }
-  }
 
     .user-panel-item {
       text-align: center;
@@ -391,6 +426,43 @@ const logout = async () => {
 
     a {
       color: #61666d;
+    }
+  }
+}
+.nav-list{
+ display: flex;
+  .nav-part{
+    &:last-child {
+      border-right:none;
+    }
+    padding: 0px 10px;
+    border-right:1px solid #ddd;
+    .nav-item{
+      display:flex;
+      padding:0px 10px;
+      height: 35px;
+      border-radius:3px;
+      cursor:pointer;
+      align-items:center;
+      width: 150px;
+      text-decoration: none;
+      color:#2f3238;
+      &:hover {
+        background: #ddd;
+      }
+      .icon {
+        width: 25px;
+        height: 25px;
+        overflow: hidden;
+        margin-right: 5px;
+
+        img {
+          width: 100%;
+        }
+      }
+      .category-name{
+        flex: 1;
+      }
     }
   }
 }
