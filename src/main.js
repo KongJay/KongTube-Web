@@ -34,4 +34,5 @@ app.config.globalProperties.Utils = Utils;
 app.config.globalProperties.Api = Api;
 app.config.globalProperties.Confirm = Confirm;
 app.config.globalProperties.imageThumbnailSuffix = "_thumbnail.jpg";
+app.config.globalProperties.rowCategoryCount = 10;
 app.mount('#app')
